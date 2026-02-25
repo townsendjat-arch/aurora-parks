@@ -61,20 +61,17 @@
     width: fit-content; margin-top: 4px;
   }
   .md-badge {
-    display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
     text-decoration: none;
   }
   .md-label { font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 0.08em; text-transform: uppercase; }
   .md-logo {
-    background: var(--md-orange);
+    background: var(--white);
     border-radius: 10px;
     padding: 8px 16px;
-    display: flex; align-items: center; gap: 8px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.2);
   }
-  .md-logo-icon { font-size: 20px; }
-  .md-logo-text { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800; color: white; line-height: 1.1; }
-  .md-logo-sub { font-size: 9px; color: rgba(255,255,255,0.7); font-weight: 300; }
+  .md-logo img { height: 36px; width: auto; display: block; }
 
   .sticky {
     background: var(--white);
@@ -138,33 +135,18 @@
   .card:hover { box-shadow: var(--shadow-hover); transform: translateY(-3px); }
   @keyframes up { from { opacity:0; transform:translateY(7px); } to { opacity:1; transform:translateY(0); } }
 
-  /* PHOTO GALLERY */
   .photo-gallery {
     position: relative;
     width: 100%; aspect-ratio: 16/9;
     overflow: hidden;
-    cursor: pointer;
   }
-  .photo-gallery img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-gallery img.park-photo { width: 100%; height: 100%; object-fit: cover; display: block; }
   .placeholder {
     width: 100%; height: 100%;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
   }
   .placeholder-icon { font-size: 38px; opacity: 0.45; }
   .placeholder-text { font-size: 11px; color: #999; font-style: italic; }
-
-  /* Photo submit button overlay */
-  .photo-submit-btn {
-    position: absolute; bottom: 8px; right: 8px;
-    background: rgba(0,0,0,0.55); color: white;
-    border: none; border-radius: 6px;
-    padding: 5px 10px; font-size: 11px; font-weight: 500;
-    cursor: pointer; font-family: 'DM Sans', sans-serif;
-    display: flex; align-items: center; gap: 4px;
-    transition: background 0.15s;
-    text-decoration: none;
-  }
-  .photo-submit-btn:hover { background: var(--md-orange); }
 
   .photo-nav {
     position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
@@ -196,7 +178,6 @@
     font-size: 10px; padding: 2px 7px; border-radius: 100px; font-weight: 500;
   }
 
-  /* Passport stamp */
   .passport-btn {
     position: absolute; top: 8px; left: 8px;
     background: rgba(255,255,255,0.9);
@@ -246,7 +227,6 @@
   .match-badge.none-match { background: rgba(0,0,0,0.05); color: #ccc; }
   .card.dimmed { opacity: 0.42; }
 
-  /* PASSPORT BANNER */
   .passport-bar {
     background: var(--white);
     border-bottom: 1px solid #e8e4de;
@@ -276,9 +256,9 @@
     background: var(--grass); color: rgba(255,255,255,0.6);
     text-align: center; padding: 28px 20px; font-size: 12px;
   }
-  footer a { color: var(--md-orange); text-decoration: none; font-weight: 600; }
+  footer a { color: rgba(255,255,255,0.9); text-decoration: none; font-weight: 600; }
   footer a:hover { text-decoration: underline; }
-  .footer-logo { font-family: 'Syne', sans-serif; font-weight: 800; color: white; font-size: 18px; margin-bottom: 6px; }
+  .footer-logo img { height: 32px; width: auto; filter: brightness(0) invert(1); margin-bottom: 8px; }
 </style>
 </head>
 <body>
@@ -293,17 +273,12 @@
     <a href="https://mightydads.org" target="_blank" class="md-badge">
       <span class="md-label">Brought to you by</span>
       <div class="md-logo">
-        <div class="md-logo-icon">💪</div>
-        <div>
-          <div class="md-logo-text">Mighty Dads</div>
-          <div class="md-logo-sub">Aurora, Colorado</div>
-        </div>
+        <img src="./0.png" alt="Mighty Dads">
       </div>
     </a>
   </div>
 </header>
 
-<!-- PASSPORT BAR -->
 <div class="passport-bar">
   <div class="passport-inner">
     <span>🏕️</span>
@@ -344,13 +319,12 @@
 </main>
 
 <footer>
-  <div class="footer-logo">💪 Mighty Dads</div>
+  <div class="footer-logo"><img src="./0.png" alt="Mighty Dads"></div>
   <div>Building community for dads in Aurora, Colorado &mdash; <a href="https://mightydads.org" target="_blank">mightydads.org</a></div>
   <div style="margin-top:6px;opacity:0.6;">Park data sourced from the <a href="https://www.auroragov.org" target="_blank">City of Aurora</a></div>
 </footer>
 
 <script>
-// Passport stored in memory (later can move to backend)
 let visited = new Set(JSON.parse(localStorage.getItem('md_visited') || '[]'));
 
 function saveVisited() {
@@ -555,7 +529,6 @@ function createGallery(park, idx) {
   const [c1, c2] = GRADIENTS[idx % GRADIENTS.length];
   const icon = PLACEHOLDER_ICONS[idx % PLACEHOLDER_ICONS.length];
 
-  // Passport stamp button
   const passportBtn = document.createElement('button');
   passportBtn.className = `passport-btn${visited.has(park.n) ? ' stamped' : ''}`;
   passportBtn.innerHTML = visited.has(park.n) ? '✓ Visited' : '🏕️ Check In';
@@ -576,6 +549,7 @@ function createGallery(park, idx) {
   } else {
     let current = 0;
     const imgEl = document.createElement('img');
+    imgEl.className = 'park-photo';
     imgEl.src = photos[0]; imgEl.alt = park.n;
     div.appendChild(imgEl);
     if (photos.length > 1) {
@@ -606,16 +580,6 @@ function createGallery(park, idx) {
       });
     }
   }
-
-  // Submit photo button
-  const submitUrl = `https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?usp=pp_url&entry.PARK_FIELD=${encodeURIComponent(park.n)}`;
-  const submitBtn = document.createElement('a');
-  submitBtn.className = 'photo-submit-btn';
-  submitBtn.href = submitUrl;
-  submitBtn.target = '_blank';
-  submitBtn.innerHTML = '📷 Add Photo';
-  div.appendChild(submitBtn);
-
   return div;
 }
 
