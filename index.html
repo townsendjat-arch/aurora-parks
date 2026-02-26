@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root {
     --grass: #3d6b4a; --grass-light: #5a8f6a; --earth: #b07848;
@@ -52,7 +53,7 @@
   .map-btn { padding: 5px 12px; border-radius: 8px; border: 1.5px solid #ddd; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: #555; cursor: pointer; transition: all 0.14s; display: flex; align-items: center; gap: 5px; }
   .map-btn:hover { border-color: var(--grass); color: var(--grass); }
   .map-btn.active { background: var(--grass); border-color: var(--grass); color: white; }
-  #map { height: 400px; }
+  #map { height: 400px; min-height: 400px; background: #e8e4de; }
   .map-legend { padding: 8px 16px; border-top: 1px solid #e8e4de; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 11px; color: #999; }
   .legend-item { display: flex; align-items: center; gap: 5px; }
   .legend-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0,0,0,0.15); flex-shrink: 0; }
@@ -754,16 +755,20 @@ render();
 searchEl.addEventListener(‘input’, render);
 sortEl.addEventListener(‘change’, render);
 
-// Dynamically load Leaflet so it works in all contexts
-(function() {
-var script = document.createElement(‘script’);
-script.src = ‘https://unpkg.com/leaflet@1.9.4/dist/leaflet.js’;
-script.onload = function() { initMap(); renderMarkers(currentFiltered); };
-script.onerror = function() {
-document.getElementById(‘map’).innerHTML = ‘<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#aaa;font-size:13px;">Map unavailable — check your connection</div>’;
-};
-document.head.appendChild(script);
-})();
+// Init map after page is fully ready
+if (typeof L !== ‘undefined’) {
+initMap();
+renderMarkers(currentFiltered);
+} else {
+window.addEventListener(‘load’, function() {
+if (typeof L !== ‘undefined’) {
+initMap();
+renderMarkers(currentFiltered);
+} else {
+document.getElementById(‘map’).innerHTML = ‘<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#aaa;font-size:13px;">Map unavailable — check your internet connection</div>’;
+}
+});
+}
 </script>
 
 </body>
