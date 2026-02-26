@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -327,13 +327,16 @@ markersLayer = L.layerGroup().addTo(map);
 function renderMarkers(filteredList) {
 if (!markersLayer) return;
 markersLayer.clearLayers();
-const filteredNames = new Set(filteredList.map(p => p.n));
 const hasFilters = window._activeSet && window._activeSet.size > 0;
+// Only parks that actually match ALL active filters are “matches”
+const matchNames = hasFilters
+? new Set(filteredList.filter(p => p.score === window._activeSet.size).map(p => p.n))
+: new Set();
 
 let toShow = P.filter(p => {
 const c = COORDS[p.n];
 if (!c) return false;
-if (mapMode === ‘filtered’) return filteredNames.has(p.n);
+if (mapMode === ‘filtered’) return matchNames.has(p.n) || (!hasFilters && true);
 if (mapMode === ‘visited’) return visited.has(p.n);
 return true;
 });
@@ -341,7 +344,7 @@ return true;
 toShow.forEach(p => {
 const c = COORDS[p.n];
 const isVisited = visited.has(p.n);
-const isMatch = filteredNames.has(p.n) && hasFilters;
+const isMatch = matchNames.has(p.n);
 const color = isVisited ? ‘#e8703a’ : isMatch ? ‘#c8a000’ : ‘#3d6b4a’;
 const r = isVisited || isMatch ? 8 : 6;
 L.circleMarker([c[0], c[1]], {
