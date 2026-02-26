@@ -331,6 +331,7 @@
 let visited = new Set(JSON.parse(localStorage.getItem('md_visited') || '[]'));
 // --- MAP INIT ---
 let map;
+let markersLayer;
 
 function initMap() {
   map = L.map("map").setView([39.7294, -104.8319], 11); // Aurora, CO
@@ -339,6 +340,23 @@ function initMap() {
     maxZoom: 19,
     attribution: "&copy; OpenStreetMap contributors"
   }).addTo(map);
+  markersLayer = L.layerGroup().addTo(map);
+}
+  function renderMarkers(list) {
+  if (!markersLayer) return;
+  markersLayer.clearLayers();
+
+  list.forEach(p => {
+    if (!p.lat || !p.lng) return;
+
+    L.circleMarker([p.lat, p.lng], {
+      radius: 6,
+      weight: 2,
+      fillOpacity: 0.6
+    })
+    .bindPopup(`<b>${p.n}</b><br>${p.a}, Aurora CO`)
+    .addTo(markersLayer);
+  });
 }
 function saveVisited() {
   localStorage.setItem('md_visited', JSON.stringify([...visited]));
@@ -678,10 +696,27 @@ function render() {
 
 updatePassport();
   initMap();
+ function renderMarkers(list) {
+  if (!markersLayer) return;
+  markersLayer.clearLayers();
+
+  list.forEach(p => {
+    if (!p.lat || !p.lng) return;
+
+    L.circleMarker([p.lat, p.lng], {
+      radius: 6,
+      weight: 2,
+      fillOpacity: 0.6
+    })
+    .bindPopup(`<b>${p.n}</b><br>${p.a}, Aurora CO`)
+    .addTo(markersLayer);
+  });
+} 
 searchEl.addEventListener('input', render);
 sortEl.addEventListener('change', render);
 render();
 </script>
 </body>
 </html>
+
 
