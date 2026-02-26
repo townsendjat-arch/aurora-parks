@@ -6,6 +6,8 @@
 <title>Aurora Parks Finder — Mighty Dads</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root {
     --grass: #3d6b4a;
@@ -309,6 +311,7 @@
 </div>
 
 <main>
+  <div id="map" style="height: 360px; border-radius: 14px; box-shadow: var(--shadow); overflow:hidden; margin-bottom: 18px;"></div>
   <div class="meta" id="meta"></div>
   <div class="grid" id="grid"></div>
   <div class="empty" id="empty" style="display:none">
@@ -326,7 +329,17 @@
 
 <script>
 let visited = new Set(JSON.parse(localStorage.getItem('md_visited') || '[]'));
+// --- MAP INIT ---
+let map;
 
+function initMap() {
+  map = L.map("map").setView([39.7294, -104.8319], 11); // Aurora, CO
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(map);
+}
 function saveVisited() {
   localStorage.setItem('md_visited', JSON.stringify([...visited]));
   updatePassport();
@@ -664,9 +677,11 @@ function render() {
 }
 
 updatePassport();
+  initMap();
 searchEl.addEventListener('input', render);
 sortEl.addEventListener('change', render);
 render();
 </script>
 </body>
 </html>
+
