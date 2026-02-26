@@ -696,27 +696,13 @@ function render() {
 
 updatePassport();
   initMap();
- function renderMarkers(list) {
-  if (!markersLayer) return;
-  markersLayer.clearLayers();
-
-  list.forEach(p => {
-    if (!p.lat || !p.lng) return;
-
-    L.circleMarker([p.lat, p.lng], {
-      radius: 6,
-      weight: 2,
-      fillOpacity: 0.6
-    })
-    .bindPopup(`<b>${p.n}</b><br>${p.a}, Aurora CO`)
-    .addTo(markersLayer);
-  });
-} 
+ renderMarkers(P);
 searchEl.addEventListener('input', render);
 sortEl.addEventListener('change', render);
 render();
 </script>
 </body>
 </html>
+
 
 
