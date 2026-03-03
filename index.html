@@ -128,6 +128,7 @@
       <h1>Aurora Parks Finder</h1>
       <div class="subtitle">City of Aurora, Colorado</div>
       <div class="park-count">&#127794; <span id="tot">0</span> parks &amp; open spaces</div>
+      <a href="./events.html" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);color:white;text-decoration:none;font-size:12px;font-weight:500;padding:6px 14px;border-radius:100px;border:1px solid rgba(255,255,255,0.3);width:fit-content;margin-top:4px;">&#128197; Aurora Events</a>
     </div>
     <a href="https://mightydads.org" target="_blank" class="md-badge">
       <span class="md-label">Brought to you by</span>
@@ -348,7 +349,6 @@ function renderMarkers(filteredList) {
   if (!markersLayer) return;
   markersLayer.clearLayers();
   const hasFilters = window._activeSet && window._activeSet.size > 0;
-  // Only parks that actually match ALL active filters are "matches"
   const matchNames = hasFilters
     ? new Set(filteredList.filter(p => p.score === window._activeSet.size).map(p => p.n))
     : new Set();
@@ -771,7 +771,6 @@ render();
 searchEl.addEventListener('input', render);
 sortEl.addEventListener('change', render);
 
-// Init map after page is fully ready
 if (typeof L !== 'undefined') {
   initMap();
   renderMarkers(currentFiltered);
