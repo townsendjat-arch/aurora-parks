@@ -61,7 +61,8 @@
   .map-btn { padding: 5px 12px; border-radius: 8px; border: 1.5px solid #ddd; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: #555; cursor: pointer; transition: all 0.14s; display: flex; align-items: center; gap: 5px; }
   .map-btn:hover { border-color: var(--grass); color: var(--grass); }
   .map-btn.active { background: var(--grass); border-color: var(--grass); color: white; }
-  #map { height: 400px; min-height: 400px; background: #e8e4de; }
+ #map { height: 400px; min-height: 400px; background: #e8e4de; touch-action: pan-y; }
+#map.map-active { touch-action: none; }
   .map-legend { padding: 8px 16px; border-top: 1px solid #e8e4de; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 11px; color: #999; }
   .legend-item { display: flex; align-items: center; gap: 5px; }
   .legend-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0,0,0,0.15); flex-shrink: 0; }
@@ -338,11 +339,51 @@ let map, markersLayer, userMarker;
 let currentFiltered = [];
 
 function initMap() {
-  map = L.map("map").setView([39.710, -104.800], 11);
+  const isCoarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+
+  map = L.map("map", {
+    scrollWheelZoom: false,
+    tap: true,
+    dragging: true,
+    zoomControl: true,
+    preferCanvas: true
+  }).setView([39.710, -104.800], 11);
+
+  if (isCoarsePointer) {
+    map.dragging.disable();
+  }
+
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19, attribution: "&copy; OpenStreetMap contributors"
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap contributors"
   }).addTo(map);
+
   markersLayer = L.layerGroup().addTo(map);
+
+  const mapEl = document.getElementById('map');
+
+  function activateMap() {
+    if (!map) return;
+    map.scrollWheelZoom.enable();
+    map.dragging.enable();
+    mapEl.classList.add('map-active');
+  }
+
+  function deactivateMap() {
+    if (!map) return;
+    map.scrollWheelZoom.disable();
+    if (isCoarsePointer) map.dragging.disable();
+    mapEl.classList.remove('map-active');
+  }
+
+  mapEl.addEventListener('click', activateMap, { passive: true });
+  mapEl.addEventListener('touchstart', activateMap, { passive: true });
+
+  document.addEventListener('click', (e) => {
+    if (!mapEl.contains(e.target)) deactivateMap();
+  }, { passive: true });
+
+  deactivateMap();
 }
 
 function renderMarkers(filteredList) {
@@ -377,12 +418,24 @@ function renderMarkers(filteredList) {
     ).addTo(markersLayer);
   });
 }
-
 function focusMapOnPark(name) {
   const c = COORDS[name];
-  if (!c) return;
-  map.setView([c[0], c[1]], 15, { animate: true });
-  document.querySelector('.map-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (!c || !map) return;
+
+  map.scrollWheelZoom.enable();
+  map.dragging.enable();
+  document.getElementById('map').classList.add('map-active');
+
+  map.setView([c[0], c[1]], 15, { animate: false });
+
+  const mapSection = document.querySelector('.map-section');
+  const rect = mapSection.getBoundingClientRect();
+  const mapMostlyVisible = rect.top < window.innerHeight * 0.25 && rect.bottom > window.innerHeight * 0.25;
+
+  if (!mapMostlyVisible) {
+    mapSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   markersLayer.eachLayer(layer => {
     if (layer.getLatLng) {
       const ll = layer.getLatLng();
@@ -392,6 +445,7 @@ function focusMapOnPark(name) {
     }
   });
 }
+
 
 function setMapMode(mode) {
   mapMode = mode;
