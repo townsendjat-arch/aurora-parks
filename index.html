@@ -120,6 +120,10 @@
   .leaflet-popup-content b { font-family: 'Syne', sans-serif; font-size: 14px; display: block; margin-bottom: 3px; }
   .popup-acres { font-size: 11px; color: #aaa; }
   .popup-visited { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 600; background: rgba(61,107,74,0.13); color: var(--grass); padding: 2px 8px; border-radius: 100px; }
+  .trail-filters { padding: 8px 16px; border-bottom: 1px solid #e8e4de; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .trail-filter-label { font-size: 11px; font-weight: 500; color: #999; text-transform: uppercase; letter-spacing: 0.07em; flex-shrink: 0; margin-right: 2px; }
+  .trail-filter-sep { width: 1px; height: 18px; background: #e8e4de; flex-shrink: 0; margin: 0 4px; }
+  .legend-line { display: inline-block; width: 18px; height: 3px; border-radius: 2px; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -186,7 +190,22 @@
         <button class="map-btn active" id="btn-show-all" onclick="setMapMode('all')">All parks</button>
         <button class="map-btn" id="btn-show-filtered" onclick="setMapMode('filtered')">Filtered only</button>
         <button class="map-btn" id="btn-show-visited" onclick="setMapMode('visited')">Visited only</button>
+        <button class="map-btn active" id="btn-trails" onclick="toggleTrails()">&#x1F97E; Trails</button>
       </div>
+    </div>
+    <div class="trail-filters" id="trail-filters">
+      <span class="trail-filter-label">Surface:</span>
+      <button class="map-btn active" onclick="setTrailSurface(this,'ALL')">All</button>
+      <button class="map-btn" onclick="setTrailSurface(this,'HARD')">Hard</button>
+      <button class="map-btn" onclick="setTrailSurface(this,'SOFT')">Soft</button>
+      <button class="map-btn" onclick="setTrailSurface(this,'DUAL')">Dual</button>
+      <span class="trail-filter-sep"></span>
+      <span class="trail-filter-label">Type:</span>
+      <button class="map-btn active" onclick="setTrailType(this,'ALL')">All</button>
+      <button class="map-btn" onclick="setTrailType(this,'TL')">Trail</button>
+      <button class="map-btn" onclick="setTrailType(this,'PATH')">Path</button>
+      <button class="map-btn" onclick="setTrailType(this,'SDWLK')">Sidewalk</button>
+      <button class="map-btn" onclick="setTrailType(this,'STREET')">Street</button>
     </div>
     <div id="map"></div>
     <div class="map-legend">
@@ -194,6 +213,9 @@
       <span class="legend-item"><span class="legend-dot" style="background:#e8703a"></span> Visited</span>
       <span class="legend-item"><span class="legend-dot" style="background:#c8a000"></span> Filter match</span>
       <span class="legend-item"><span class="legend-dot" style="background:#4285f4"></span> You</span>
+      <span class="legend-item"><span class="legend-line" style="background:#3b82f6"></span> Hard trail</span>
+      <span class="legend-item"><span class="legend-line" style="background:#22c55e"></span> Soft trail</span>
+      <span class="legend-item"><span class="legend-line" style="background:#f59e0b"></span> Dual trail</span>
       <span id="legend-dist" style="margin-left:auto;color:#bbb;font-size:11px;"></span>
     </div>
   </div>
@@ -338,6 +360,17 @@ let mapMode = 'all';
 let map, markersLayer, userMarker;
 let currentFiltered = [];
 
+// Trails layer state
+let trailsLayer = null;
+let trailsData = null;
+let trailsVisible = true;
+let trailSurface = 'ALL';
+let trailType = 'ALL';
+
+const TRAIL_COLORS = { HARD: '#3b82f6', SOFT: '#22c55e', DUAL: '#f59e0b' };
+const TRAIL_SURFACE_LABELS = { HARD: 'Hard', SOFT: 'Soft', DUAL: 'Dual' };
+const TRAIL_TYPE_LABELS = { TL: 'Trail', PATH: 'Path', SDWLK: 'Sidewalk', STREET: 'Street' };
+
 function initMap() {
   const isCoarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
 
@@ -384,6 +417,80 @@ function initMap() {
   }, { passive: true });
 
   deactivateMap();
+  loadTrails();
+}
+
+function loadTrails() {
+  fetch('Trails%20B.geojson')
+    .then(r => r.json())
+    .then(data => {
+      trailsData = data;
+      trailsLayer = L.layerGroup().addTo(map);
+      renderTrails();
+    })
+    .catch(err => console.warn('Trails layer failed to load:', err));
+}
+
+function renderTrails() {
+  if (!trailsLayer || !trailsData) return;
+  trailsLayer.clearLayers();
+  if (!trailsVisible) return;
+
+  trailsData.features.forEach(feature => {
+    const props = feature.properties;
+    const surface = (props.SURFACE || '').toUpperCase();
+    const type = (props.TYPE || '').toUpperCase();
+
+    if (trailSurface !== 'ALL' && surface !== trailSurface) return;
+    if (trailType !== 'ALL' && type !== trailType) return;
+
+    const color = TRAIL_COLORS[surface] || '#888';
+    const name = props.NAME || 'Unnamed Trail';
+    const miles = props.MILES != null ? Number(props.MILES).toFixed(2) : 'N/A';
+    const surfaceLabel = TRAIL_SURFACE_LABELS[surface] || (props.SURFACE || 'Unknown');
+    const typeLabel = TRAIL_TYPE_LABELS[type] || (props.TYPE || 'Unknown');
+
+    const layer = L.geoJSON(feature, {
+      style: { color, weight: 2, opacity: 0.7, fillOpacity: 0 }
+    });
+
+    layer.on('mouseover', function() {
+      layer.setStyle({ weight: 4, opacity: 1 });
+    });
+    layer.on('mouseout', function() {
+      layer.setStyle({ weight: 2, opacity: 0.7 });
+    });
+
+    layer.bindPopup(
+      '<b>' + name + '</b>' +
+      '<div style="font-size:12px;color:#555;margin-top:4px;">Surface: ' + surfaceLabel + '</div>' +
+      '<div style="font-size:12px;color:#555;">Type: ' + typeLabel + '</div>' +
+      '<div style="font-size:12px;color:#555;">Miles: ' + miles + '</div>'
+    );
+
+    layer.addTo(trailsLayer);
+  });
+}
+
+function toggleTrails() {
+  trailsVisible = !trailsVisible;
+  document.getElementById('btn-trails').classList.toggle('active', trailsVisible);
+  document.getElementById('trail-filters').style.display = trailsVisible ? '' : 'none';
+  renderTrails();
+}
+
+function setTrailSurface(el, val) {
+  trailSurface = val;
+  document.querySelectorAll('#trail-filters button[onclick*="setTrailSurface"]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderTrails();
+}
+
+function setTrailType(el, val) {
+  trailType = val;
+  document.querySelectorAll('#trail-filters button[onclick*="setTrailType"]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderTrails();
 }
 
 function renderMarkers(filteredList) {
