@@ -124,6 +124,20 @@
   .trail-filter-label { font-size: 11px; font-weight: 500; color: #999; text-transform: uppercase; letter-spacing: 0.07em; flex-shrink: 0; margin-right: 2px; }
   .trail-filter-sep { width: 1px; height: 18px; background: #e8e4de; flex-shrink: 0; margin: 0 4px; }
   .legend-line { display: inline-block; width: 18px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+  /* Category mode tabs */
+  .map-category-tabs { display: flex; gap: 6px; padding: 10px 16px; border-bottom: 1px solid #e8e4de; background: #faf9f7; flex-wrap: wrap; }
+  .cat-tab { padding: 6px 18px; border-radius: 100px; border: 1.5px solid #ddd; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; color: #555; cursor: pointer; transition: all 0.14s; }
+  .cat-tab:hover { border-color: var(--grass); color: var(--grass); }
+  .cat-tab.active { background: var(--grass); border-color: var(--grass); color: white; }
+  .cat-tab.cat-events.active { background: var(--md-orange); border-color: var(--md-orange); }
+  /* Events panel inside map section */
+  .events-panel { display: none; padding: 24px 20px; align-items: center; justify-content: center; flex-direction: column; gap: 10px; background: #fff8f5; border-bottom: 1px solid #f0ddd8; text-align: center; }
+  .events-panel.visible { display: flex; }
+  /* Popup trail list */
+  .popup-trail-list { margin-top: 5px; font-size: 11px; color: #555; }
+  .popup-trail-list li { list-style: none; padding: 1px 0; }
+  .popup-park-list { margin-top: 5px; font-size: 11px; color: #555; }
+  .popup-park-list li { list-style: none; padding: 1px 0; }
 </style>
 </head>
 <body>
@@ -190,10 +204,26 @@
         <button class="map-btn active" id="btn-show-all" onclick="setMapMode('all')">All parks</button>
         <button class="map-btn" id="btn-show-filtered" onclick="setMapMode('filtered')">Filtered only</button>
         <button class="map-btn" id="btn-show-visited" onclick="setMapMode('visited')">Visited only</button>
-        <button class="map-btn active" id="btn-trails" onclick="toggleTrails()">&#x1F97E; Trails</button>
       </div>
     </div>
-    <div class="trail-filters" id="trail-filters">
+
+    <!-- Category mode tabs: Parks / Trails / Events -->
+    <div class="map-category-tabs">
+      <button class="cat-tab active" onclick="setCategoryMode('parks')">&#127794; Parks</button>
+      <button class="cat-tab" onclick="setCategoryMode('trails')">&#x1F97E; Trails</button>
+      <button class="cat-tab cat-events" onclick="setCategoryMode('events')">&#128197; Events</button>
+    </div>
+
+    <!-- Events panel (shown in Events category mode) -->
+    <div class="events-panel" id="events-panel">
+      <div style="font-size:32px;">&#128197;</div>
+      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--ink);">Aurora Events</div>
+      <div style="font-size:13px;color:#888;max-width:340px;">Find parks events, community activities, and family happenings across Aurora.</div>
+      <a href="./events.html" style="display:inline-flex;align-items:center;gap:6px;background:var(--md-orange);color:white;text-decoration:none;font-size:13px;font-weight:600;padding:9px 22px;border-radius:8px;margin-top:4px;">View Events &#x2192;</a>
+    </div>
+
+    <!-- Trail filters (shown in Trails category mode) -->
+    <div class="trail-filters" id="trail-filters" style="display:none">
       <span class="trail-filter-label">Surface:</span>
       <button class="map-btn active" onclick="setTrailSurface(this,'ALL')">All</button>
       <button class="map-btn" onclick="setTrailSurface(this,'HARD')">Hard</button>
@@ -206,6 +236,12 @@
       <button class="map-btn" onclick="setTrailType(this,'PATH')">Path</button>
       <button class="map-btn" onclick="setTrailType(this,'SDWLK')">Sidewalk</button>
       <button class="map-btn" onclick="setTrailType(this,'STREET')">Street</button>
+      <span class="trail-filter-sep"></span>
+      <span class="trail-filter-label">Length:</span>
+      <button class="map-btn active" onclick="setTrailLength(this,'ALL')">All</button>
+      <button class="map-btn" onclick="setTrailLength(this,'SHORT')">Short (&lt;0.25mi)</button>
+      <button class="map-btn" onclick="setTrailLength(this,'MEDIUM')">Medium</button>
+      <button class="map-btn" onclick="setTrailLength(this,'LONG')">Long (&gt;0.75mi)</button>
     </div>
     <div id="map"></div>
     <div class="map-legend">
@@ -363,9 +399,17 @@ let currentFiltered = [];
 // Trails layer state
 let trailsLayer = null;
 let trailsData = null;
-let trailsVisible = true;
+let trailsVisible = false;  // starts hidden; Trails tab activates
 let trailSurface = 'ALL';
 let trailType = 'ALL';
+let trailLength = 'ALL';    // 'ALL', 'SHORT' (<0.25mi), 'MEDIUM' (0.25-0.75mi), 'LONG' (>0.75mi)
+
+// Category mode: 'parks' | 'trails' | 'events'
+let categoryMode = 'parks';
+
+// Precomputed proximity lookups built after trail data loads
+let parkNearbyTrails = {};  // parkName -> [trailName, ...]
+let trailNearbyParks = {};  // trailName -> [parkName, ...]
 
 const TRAIL_COLORS = { HARD: '#3b82f6', SOFT: '#22c55e', DUAL: '#f59e0b' };
 const TRAIL_SURFACE_LABELS = { HARD: 'Hard', SOFT: 'Soft', DUAL: 'Dual' };
@@ -427,6 +471,9 @@ function loadTrails() {
       trailsData = data;
       trailsLayer = L.layerGroup().addTo(map);
       renderTrails();
+      // Build park<->trail proximity lookup in the background after a short delay
+      // so it doesn't block the initial render
+      setTimeout(buildParkTrailConnections, 300);
     })
     .catch(err => console.warn('Trails layer failed to load:', err));
 }
@@ -440,20 +487,52 @@ function renderTrails() {
     const props = feature.properties;
     const surface = (props.SURFACE || '').toUpperCase();
     const type = (props.TYPE || '').toUpperCase();
+    const segMiles = props.MILES != null ? Number(props.MILES) : 0;
 
+    // Surface filter
     if (trailSurface !== 'ALL' && surface !== trailSurface) return;
+    // Type filter
     if (trailType !== 'ALL' && type !== trailType) return;
+    // Length filter (based on individual segment length)
+    if (trailLength === 'SHORT' && segMiles >= 0.25) return;
+    if (trailLength === 'MEDIUM' && (segMiles < 0.25 || segMiles >= 0.75)) return;
+    if (trailLength === 'LONG' && segMiles < 0.75) return;
 
     const color = TRAIL_COLORS[surface] || '#888';
     const name = props.NAME || 'Unnamed Trail';
-    const miles = props.MILES != null ? Number(props.MILES).toFixed(2) : 'N/A';
+    const milesStr = segMiles > 0 ? segMiles.toFixed(2) + ' mi' : 'N/A';
     const surfaceLabel = TRAIL_SURFACE_LABELS[surface] || (props.SURFACE || 'Unknown');
     const typeLabel = TRAIL_TYPE_LABELS[type] || (props.TYPE || 'Unknown');
+
+    // Derive "Good for" from trail type
+    const goodFor = [];
+    if (type === 'TL') goodFor.push('walking');
+    else if (type === 'PATH') goodFor.push('walking', 'biking');
+    else if (type === 'SDWLK') goodFor.push('walking');
+    else if (type === 'STREET') goodFor.push('mixed use');
+
+    // Nearby parks (from precomputed lookup; only available for named trails)
+    const nearParks = (props.NAME && trailNearbyParks[props.NAME]) || [];
+
+    // Build popup HTML — only include fields that have real values
+    let popup = '<b>' + name + '</b>';
+    popup += '<div style="font-size:12px;color:#555;margin-top:4px;">Segment: ' + milesStr + '</div>';
+    popup += '<div style="font-size:12px;color:#555;">Surface: ' + surfaceLabel + '</div>';
+    popup += '<div style="font-size:12px;color:#555;">Type: ' + typeLabel + '</div>';
+    if (goodFor.length) {
+      popup += '<div style="font-size:12px;color:#555;">Good for: ' + goodFor.join(', ') + '</div>';
+    }
+    if (nearParks.length) {
+      popup += '<div style="font-size:12px;color:#555;margin-top:5px;"><b style="font-family:\'Syne\',sans-serif;">Nearby parks:</b><ul class="popup-park-list">' +
+        nearParks.slice(0, 4).map(n => '<li>&#x2022; ' + n + '</li>').join('') +
+        '</ul></div>';
+    }
 
     const layer = L.geoJSON(feature, {
       style: { color, weight: 2, opacity: 0.7, fillOpacity: 0 }
     });
 
+    // Hover highlight
     layer.on('mouseover', function() {
       layer.setStyle({ weight: 4, opacity: 1 });
     });
@@ -461,13 +540,7 @@ function renderTrails() {
       layer.setStyle({ weight: 2, opacity: 0.7 });
     });
 
-    layer.bindPopup(
-      '<b>' + name + '</b>' +
-      '<div style="font-size:12px;color:#555;margin-top:4px;">Surface: ' + surfaceLabel + '</div>' +
-      '<div style="font-size:12px;color:#555;">Type: ' + typeLabel + '</div>' +
-      '<div style="font-size:12px;color:#555;">Miles: ' + miles + '</div>'
-    );
-
+    layer.bindPopup(popup);
     layer.addTo(trailsLayer);
   });
 }
@@ -493,9 +566,120 @@ function setTrailType(el, val) {
   renderTrails();
 }
 
+function setTrailLength(el, val) {
+  trailLength = val;
+  document.querySelectorAll('#trail-filters button[onclick*="setTrailLength"]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderTrails();
+}
+
+// Switch between Parks / Trails / Events category modes
+function setCategoryMode(mode) {
+  categoryMode = mode;
+
+  // Update tab active states
+  document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
+  const activeTab = document.querySelector('.cat-tab[onclick*="' + mode + '"]');
+  if (activeTab) activeTab.classList.add('active');
+
+  const trailFiltersEl = document.getElementById('trail-filters');
+  const eventsPanel = document.getElementById('events-panel');
+
+  if (mode === 'parks') {
+    // Show park markers, hide trails and events panel
+    trailsVisible = false;
+    trailFiltersEl.style.display = 'none';
+    eventsPanel.classList.remove('visible');
+    renderTrails();
+    renderMarkers(currentFiltered);
+  } else if (mode === 'trails') {
+    // Hide park markers, show trail layer and filters
+    trailsVisible = true;
+    trailFiltersEl.style.display = '';
+    eventsPanel.classList.remove('visible');
+    markersLayer.clearLayers();
+    renderTrails();
+  } else if (mode === 'events') {
+    // Hide everything on map, show events panel with link
+    trailsVisible = false;
+    trailFiltersEl.style.display = 'none';
+    eventsPanel.classList.add('visible');
+    markersLayer.clearLayers();
+    renderTrails();
+  }
+}
+
+// Build park <-> trail proximity lookup table
+// Called once after trail data loads. Runs in O(namedTrails * parks) using bbox pre-filter.
+function buildParkTrailConnections() {
+  if (!trailsData) return;
+  const RADIUS_MILES = 0.5;
+  // Rough degree approximation for bbox pre-filter (0.5mi ~= 0.008 degrees)
+  const BBOX_DEG = 0.012;
+
+  // Group first-coordinates of each named trail segment by trail name
+  const namedTrailCoords = {};
+  trailsData.features.forEach(feature => {
+    const name = feature.properties.NAME;
+    if (!name) return;
+    const coords = feature.geometry && feature.geometry.coordinates;
+    if (!coords || !coords.length) return;
+    if (!namedTrailCoords[name]) namedTrailCoords[name] = [];
+    // Sample a few points along this segment (first, middle, last)
+    namedTrailCoords[name].push(coords[0]);
+    if (coords.length > 2) namedTrailCoords[name].push(coords[Math.floor(coords.length / 2)]);
+    namedTrailCoords[name].push(coords[coords.length - 1]);
+  });
+
+  const parkEntries = Object.entries(COORDS).filter(([, c]) => c);
+
+  // For each named trail, find nearby parks
+  Object.entries(namedTrailCoords).forEach(([trailName, pts]) => {
+    const nearParks = [];
+    parkEntries.forEach(([parkName, [pLat, pLng]]) => {
+      for (const [lng, lat] of pts) {
+        // Bbox pre-filter before calling haversine
+        if (Math.abs(lat - pLat) > BBOX_DEG || Math.abs(lng - pLng) > BBOX_DEG) continue;
+        if (haversine(pLat, pLng, lat, lng) <= RADIUS_MILES) {
+          nearParks.push(parkName);
+          break; // found — no need to check more points for this park
+        }
+      }
+    });
+    if (nearParks.length) trailNearbyParks[trailName] = nearParks;
+  });
+
+  // Invert: for each park, collect which trails are nearby
+  Object.entries(trailNearbyParks).forEach(([trailName, parks]) => {
+    parks.forEach(parkName => {
+      if (!parkNearbyTrails[parkName]) parkNearbyTrails[parkName] = [];
+      if (!parkNearbyTrails[parkName].includes(trailName)) {
+        parkNearbyTrails[parkName].push(trailName);
+      }
+    });
+  });
+
+  // Re-render markers so park popups now include nearby trails
+  renderMarkers(currentFiltered);
+}
+
+// Auto-zoom map to show a list of parks (by matching park objects with .n)
+function autoZoomToFiltered(matchList) {
+  if (!map || !matchList || !matchList.length) return;
+  const points = matchList.filter(p => COORDS[p.n]).map(p => COORDS[p.n]);
+  if (!points.length) return;
+  const bounds = L.latLngBounds(points);
+  if (bounds.isValid()) {
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14, animate: true });
+  }
+}
+
 function renderMarkers(filteredList) {
   if (!markersLayer) return;
   markersLayer.clearLayers();
+  // Park markers only show in 'parks' category mode
+  if (categoryMode !== 'parks') return;
+
   const hasFilters = window._activeSet && window._activeSet.size > 0;
   const matchNames = hasFilters
     ? new Set(filteredList.filter(p => p.score === window._activeSet.size).map(p => p.n))
@@ -515,14 +699,22 @@ function renderMarkers(filteredList) {
     const isMatch = matchNames.has(p.n);
     const color = isVisited ? '#e8703a' : isMatch ? '#c8a000' : '#3d6b4a';
     const r = isVisited || isMatch ? 8 : 6;
-    L.circleMarker([c[0], c[1]], {
-      radius: r, fillColor: color, color: 'white', weight: 2, fillOpacity: 0.88
-    }).bindPopup(
-      '<b>' + p.n + '</b>' +
+
+    // Build park popup — include nearby trails if precomputed
+    const nearTrails = parkNearbyTrails[p.n] || [];
+    let popup = '<b>' + p.n + '</b>' +
       '<div class="popup-acres">' + (p.ac > 0 ? p.ac.toLocaleString() + ' acres' : 'Open space') + '</div>' +
       '<div style="font-size:11px;color:#999;margin-top:2px">' + p.a + ', Aurora CO</div>' +
-      (isVisited ? '<div class="popup-visited">&#x2713; Visited</div>' : '')
-    ).addTo(markersLayer);
+      (isVisited ? '<div class="popup-visited">&#x2713; Visited</div>' : '');
+    if (nearTrails.length) {
+      popup += '<div style="font-size:12px;color:#555;margin-top:6px;"><b style="font-family:\'Syne\',sans-serif;">Nearby trails:</b><ul class="popup-trail-list">' +
+        nearTrails.slice(0, 4).map(n => '<li>&#x1F97E; ' + n + '</li>').join('') +
+        '</ul></div>';
+    }
+
+    L.circleMarker([c[0], c[1]], {
+      radius: r, fillColor: color, color: 'white', weight: 2, fillOpacity: 0.88
+    }).bindPopup(popup).addTo(markersLayer);
   });
 }
 function focusMapOnPark(name) {
@@ -559,6 +751,11 @@ function setMapMode(mode) {
   document.querySelectorAll('.map-btn[id^="btn-show"]').forEach(b => b.classList.remove('active'));
   document.getElementById('btn-show-' + mode).classList.add('active');
   renderMarkers(currentFiltered);
+  // Auto-zoom to matching parks when switching to Filtered mode with active filters
+  if (mode === 'filtered' && active.size > 0 && categoryMode === 'parks') {
+    const perfect = currentFiltered.filter(p => p.score === active.size);
+    autoZoomToFiltered(perfect.length ? perfect : currentFiltered.filter(p => p.score > 0));
+  }
 }
 
 function locateMe() {
@@ -876,6 +1073,11 @@ function render() {
   }
 
   renderMarkers(list);
+  // Auto-zoom to matching parks if in filtered map mode with active filters
+  if (mapMode === 'filtered' && af.length && categoryMode === 'parks') {
+    const perfect = list.filter(p => p.score === af.length);
+    autoZoomToFiltered(perfect.length ? perfect : list.filter(p => p.score > 0));
+  }
   grid.innerHTML = '';
   emptyEl.style.display = list.length ? 'none' : '';
   if (!list.length) return;
