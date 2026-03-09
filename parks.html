@@ -81,6 +81,39 @@
     #search:focus { border-color: var(--grass); background: var(--white); }
     #sort { padding: 9px 30px 9px 13px; border: 1.5px solid #ddd; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; background: var(--mist) url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23777' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center; appearance: none; outline: none; cursor: pointer; }
     .filter-bar { max-width: 1100px; margin: 0 auto; padding: 0 20px 12px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+   .filter-bar { max-width: 1100px; margin: 0 auto; padding: 0 20px 12px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+/* MOBILE FILTER TOGGLE */
+.filter-toggle {
+  display: none;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: var(--grass);
+  color: white;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+
+  .filter-toggle {
+    display: block;
+  }
+
+  .filter-bar {
+    display: none;
+  }
+
+  .filter-bar.open {
+    display: flex;
+  }
+
+}
+
+.filter-label { font-size: 11px; font-weight: 500; color: #999; text-transform: uppercase; letter-spacing: 0.07em; flex-shrink: 0; }
     .filter-label { font-size: 11px; font-weight: 500; color: #999; text-transform: uppercase; letter-spacing: 0.07em; flex-shrink: 0; }
     .pill { padding: 5px 12px; border-radius: 100px; border: 1.5px solid #ddd; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: #555; cursor: pointer; transition: all 0.14s; white-space: nowrap; line-height: 1; }
     .pill:hover { border-color: var(--grass); color: var(--grass); }
@@ -210,6 +243,7 @@
       <option value="visited">Visited first</option>
     </select>
     <div id="shown-badge" style="font-size:12px;color:#aaa;white-space:nowrap;">0 shown</div>
+<button class="filter-toggle" id="filter-toggle" type="button">Filter Parks &#9662;</button>
   </div>
   <div class="filter-bar" id="filter-bar">
     <span class="filter-label">Filter:</span>
@@ -913,6 +947,15 @@ if (typeof L !== 'undefined') {
     if (typeof L !== 'undefined') { initMap(); renderMarkers(currentFiltered); }
     else { document.getElementById('map').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#aaa;font-size:13px;">Map unavailable</div>'; }
   });
+}
+  // MOBILE FILTER TOGGLE
+const filterToggle = document.getElementById('filter-toggle');
+const filterBarEl = document.getElementById('filter-bar');
+
+if (filterToggle && filterBarEl) {
+  filterToggle.onclick = () => {
+    filterBarEl.classList.toggle('open');
+  };
 }
 </script>
 </body>
