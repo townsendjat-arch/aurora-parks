@@ -800,8 +800,10 @@ const filterBar = document.getElementById('filter-bar');
 const meta = document.getElementById('meta');
 const emptyEl = document.getElementById('empty');
 const badge = document.getElementById('shown-badge');
-
-let active = new Set();
+  
+let visibleCount = 12;
+  
+  let active = new Set();
 window._activeSet = active;
 
 FILTERS.forEach(f => {
@@ -894,7 +896,7 @@ function render() {
   emptyEl.style.display = list.length ? 'none' : '';
   if (!list.length) return;
 
-  list.forEach((p, i) => {
+  list.slice(0, visibleCount).forEach((p, i) => {
     const amenities = FILTERS.filter(f => p.f[f.k]);
     const isPerfect = af.length && p.score === af.length;
     const isPartial = af.length && p.score > 0 && p.score < af.length;
@@ -934,7 +936,20 @@ function render() {
     grid.appendChild(card);
   });
 }
+const loadWrap = document.getElementById('load-more-wrap');
+loadWrap.innerHTML = '';
 
+if (visibleCount < list.length) {
+  const btn = document.createElement('button');
+  btn.textContent = 'Load More Parks';
+  btn.className = 'map-btn';
+  btn.style.margin = '0 auto';
+  btn.onclick = () => {
+    visibleCount += 12;
+    render();
+  };
+  loadWrap.appendChild(btn);
+}
 updatePassport();
 render();
 searchEl.addEventListener('input', render);
