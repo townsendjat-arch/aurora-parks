@@ -935,8 +935,8 @@ function render() {
     card.appendChild(body);
     grid.appendChild(card);
   });
-}
-const loadWrap = document.getElementById('load-more-wrap');
+
+  const loadWrap = document.getElementById('load-more-wrap');
 loadWrap.innerHTML = '';
 
 if (visibleCount < list.length) {
@@ -949,6 +949,7 @@ if (visibleCount < list.length) {
     render();
   };
   loadWrap.appendChild(btn);
+}
 }
 updatePassport();
 render();
