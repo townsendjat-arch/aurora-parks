@@ -555,6 +555,7 @@ let visited = new Set(JSON.parse(localStorage.getItem('md_visited') || '[]'));
 let userLat = null, userLng = null;
 let mapMode = 'all';
 let map, markersLayer, userMarker;
+let parkMarkers = {};
 let currentFiltered = [];
 
 function initMap() {
@@ -563,10 +564,12 @@ function initMap() {
     maxZoom: 19, attribution: "&copy; OpenStreetMap contributors"
   }).addTo(map);
   markersLayer = L.layerGroup().addTo(map);
+  parkMarkers = {};
 }
 
 function renderMarkers(filteredList) {
   if (!markersLayer) return;
+  parkMarkers = {};
   markersLayer.clearLayers();
   const hasFilters = window._activeSet && window._activeSet.size > 0;
   const matchNames = hasFilters
@@ -584,14 +587,16 @@ function renderMarkers(filteredList) {
     const isVisited = visited.has(p.n);
     const isMatch = matchNames.has(p.n);
     const color = isVisited ? '#e8703a' : isMatch ? '#c8a000' : '#3d6b4a';
-    L.circleMarker([c[0], c[1]], {
-      radius: isVisited || isMatch ? 8 : 6, fillColor: color, color: 'white', weight: 2, fillOpacity: 0.88
-    }).bindPopup(
-      '<b>' + p.n + '</b>' +
-      '<div class="popup-acres">' + (p.ac > 0 ? p.ac.toLocaleString() + ' acres' : 'Open space') + '</div>' +
-      '<div style="font-size:11px;color:#999;margin-top:2px">' + p.a + ', Aurora CO</div>' +
-      (isVisited ? '<div class="popup-visited">&#x2713; Visited</div>' : '')
-    ).addTo(markersLayer);
+   const marker = L.circleMarker([c[0], c[1]], {
+  radius: isVisited || isMatch ? 8 : 6, fillColor: color, color: 'white', weight: 2, fillOpacity: 0.88
+}).bindPopup(
+  '<b>' + p.n + '</b>' +
+  '<div class="popup-acres">' + (p.ac > 0 ? p.ac.toLocaleString() + ' acres' : 'Open space') + '</div>' +
+  '<div style="font-size:11px;color:#999;margin-top:2px">' + p.a + ', Aurora CO</div>' +
+  (isVisited ? '<div class="popup-visited">&#x2713; Visited</div>' : '')
+).addTo(markersLayer);
+
+parkMarkers[p.n] = marker;
   });
 }
 
@@ -920,7 +925,6 @@ function render() {
   if (!list.length) return;
 
   list.slice(0, visibleCount).forEach((p, i) => {
-    const iconRow = featureIcons(p.f);
     const amenities = FILTERS.filter(f => p.f[f.k]);
     const isPerfect = af.length && p.score === af.length;
     const isPartial = af.length && p.score > 0 && p.score < af.length;
@@ -939,6 +943,19 @@ function render() {
 
     const card = document.createElement('div');
     card.className = 'card' + (isNone ? ' dimmed' : '');
+    card.onmouseenter = () => {
+    const m = parkMarkers[p.n];
+  if (m) m.setStyle({ radius: 12, weight: 3 });
+};
+
+card.onmouseleave = () => {
+  const m = parkMarkers[p.n];
+  if (m) {
+    const isVisited = visited.has(p.n);
+    const isMatch = active.size > 0 && p.score === active.size;
+    m.setStyle({ radius: isVisited || isMatch ? 8 : 6, weight: 2 });
+  }
+};
     card.style.animationDelay = Math.min(i, 25) * 16 + 'ms';
     card.appendChild(createGallery(p, p.origIdx));
     const body = document.createElement('div');
