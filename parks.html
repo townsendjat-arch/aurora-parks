@@ -944,7 +944,7 @@ function render() {
     const body = document.createElement('div');
     body.className = 'card-body';
     body.innerHTML =
-      '<div class="card-head">' 
+      '<div class="card-head">' +
         '<div class="park-name">' + p.n + '</div>' +
         '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">' +
           (acStr ? '<div class="acres">' + acStr + '</div>' : '') + matchBadge +
