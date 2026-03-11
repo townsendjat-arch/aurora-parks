@@ -843,6 +843,7 @@ function createGallery(park, idx) {
   passportBtn.innerHTML = visited.has(park.n) ? '\u2713 Visited' : '\u{1F3D5}\uFE0F Check In';
   passportBtn.onclick = e => {
     e.preventDefault();
+    e.stopPropagation();
     if (visited.has(park.n)) { visited.delete(park.n); passportBtn.className = 'passport-btn'; passportBtn.innerHTML = '\u{1F3D5}\uFE0F Check In'; }
     else { visited.add(park.n); passportBtn.className = 'passport-btn stamped'; passportBtn.innerHTML = '\u2713 Visited'; }
     saveVisited();
