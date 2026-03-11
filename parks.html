@@ -16,8 +16,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+ 
   <style>
-    :root {
+
+.park-icons{
+  font-size:22px;
+  margin-bottom:6px;
+  display:flex;
+  gap:8px;
+}
+
+ :root {   
       --grass: #3d6b4a; --grass-light: #5a8f6a; --earth: #b07848;
       --sky: #c8dff0; --ink: #1a1a1a; --mist: #f0ede8; --white: #ffffff;
       --md-orange: #e8703a;
@@ -852,6 +861,21 @@ function createGallery(park, idx) {
   return div;
 }
 
+  function featureIcons(f){
+  let icons = "";
+
+  if (f.playground) icons += "🛝 ";
+  if (f.restroom) icons += "🚻 ";
+  if (f.shelter) icons += "🌳 ";
+  if (f.trails) icons += "🚶 ";
+  if (f.dog_park) icons += "🐕 ";
+  if (f.basketball) icons += "🏀 ";
+  if (f.baseball) icons += "⚾ ";
+  if (f.tennis) icons += "🎾 ";
+  if (f.pool) icons += "💧 ";
+
+  return `<div class="park-icons">${icons}</div>`;
+}
 function render() {
   const q = searchEl.value.trim().toLowerCase();
   const s = sortEl.value;
@@ -897,6 +921,7 @@ function render() {
   if (!list.length) return;
 
   list.slice(0, visibleCount).forEach((p, i) => {
+    const iconRow = featureIcons(p.f);
     const amenities = FILTERS.filter(f => p.f[f.k]);
     const isPerfect = af.length && p.score === af.length;
     const isPartial = af.length && p.score > 0 && p.score < af.length;
@@ -921,6 +946,7 @@ function render() {
     body.className = 'card-body';
     body.innerHTML =
       '<div class="card-head">' +
+      iconRow +
         '<div class="park-name">' + p.n + '</div>' +
         '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">' +
           (acStr ? '<div class="acres">' + acStr + '</div>' : '') + matchBadge +
