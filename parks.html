@@ -943,6 +943,7 @@ function render() {
 
     const card = document.createElement('div');
     card.className = 'card' + (isNone ? ' dimmed' : '');
+    card.onclick = () => focusMapOnPark(p.n);
     card.onmouseenter = () => {
     const m = parkMarkers[p.n];
   if (m) m.setStyle({ radius: 12, weight: 3 });
