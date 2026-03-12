@@ -819,11 +819,11 @@ const emptyEl = document.getElementById('empty');
 const badge = document.getElementById('shown-badge');
   
 let visibleCount = 12;
-  
-   // If homepage passed a search query, apply it
-  if (searchQuery && searchEl) 
-     searchEl.value = searchQuery;
-  render();
+ // If homepage passed a search query, apply it
+if (searchQuery && searchEl) {
+  searchEl.value = searchQuery;
+} 
+ 
   }
   let active = new Set();
 window._activeSet = active;
