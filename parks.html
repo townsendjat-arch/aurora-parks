@@ -955,7 +955,10 @@ let list = P.map((p, origIdx) => {
       ? isPerfect ? '<div class="match-badge perfect">\u2713 ' + p.score + '/' + af.length + '</div>'
       : isPartial ? '<div class="match-badge partial">' + p.score + '/' + af.length + '</div>'
       : '<div class="match-badge none-match">0/' + af.length + '</div>' : '';
-    const mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.n + ' Aurora CO');
+    const coords = COORDS[p.n];
+     const mapUrl = coords
+  ? 'https://www.google.com/maps/dir/?api=1&destination=' + coords[0] + ',' + coords[1]
+  : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.n + ' Aurora CO');
     const cityUrl = 'https://www.auroragov.org/things_to_do/parks__open_space___trails/park_listings';
     const acStr = p.ac > 0 ? p.ac.toLocaleString() + ' ac' : '';
     const distStr = p.dist ? '<span style="font-size:11px;color:#b07848;font-weight:500">\u{1F4CD} ' + distLabel(p.dist) + '</span>' : '';
