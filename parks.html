@@ -894,13 +894,23 @@ function render() {
   const s = sortEl.value;
   const af = [...active];
 
-  let list = P.map((p, origIdx) => {
-    const matchSearch = !q || p.n.toLowerCase().includes(q) || p.a.toLowerCase().includes(q);
-    const score = af.length ? af.filter(k => p.f[k]).length : null;
-    const c = COORDS[p.n];
-    const dist = (userLat && c) ? haversine(userLat, userLng, c[0], c[1]) : null;
-    return { ...p, score, matchSearch, origIdx, dist };
-  }).filter(p => p.matchSearch);
+let list = P.map((p, origIdx) => {
+  const featureText = FILTERS
+    .filter(f => p.f[f.k])
+    .map(f => f.l.toLowerCase())
+    .join(' ');
+
+  const matchSearch =
+    !q ||
+    p.n.toLowerCase().includes(q) ||
+    p.a.toLowerCase().includes(q) ||
+    featureText.includes(q);
+
+  const score = af.length ? af.filter(k => p.f[k]).length : null;
+  const c = COORDS[p.n];
+  const dist = (userLat && c) ? haversine(userLat, userLng, c[0], c[1]) : null;
+  return { ...p, score, matchSearch, origIdx, dist };
+}).filter(p => p.matchSearch);
 
   if (af.length) list.sort((a,b) => b.score - a.score);
   else if (s === 'alpha') list.sort((a,b) => a.n.localeCompare(b.n));
