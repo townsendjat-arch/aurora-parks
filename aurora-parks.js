@@ -1,1 +1,1 @@
-
+const AURORA_PARKS = [];
