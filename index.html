@@ -541,6 +541,18 @@ Park data sourced from the
 &copy; 2026 Aurora Parks Finder
 </div>
 </footer>
+ <script>
+const homeSearch = document.getElementById('parkSearch');
+
+if (homeSearch) {
+  homeSearch.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      const query = homeSearch.value.trim();
+      window.location.href = './parks.html?search=' + encodeURIComponent(query);
+    }
+  });
+}
+</script> 
 
 </body>
 </html>
