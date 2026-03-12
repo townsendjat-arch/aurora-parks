@@ -960,7 +960,7 @@ let list = P.map((p, origIdx) => {
     const coords = COORDS[p.n];
      const mapUrl = coords
   ? 'https://www.google.com/maps/dir/?api=1&destination=' + coords[0] + ',' + coords[1]
-  : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.n + ' Aurora CO');
+ 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.n + ' ' + CITY + ' ' + STATE);
     const cityUrl = 'https://www.auroragov.org/things_to_do/parks__open_space___trails/park_listings';
     const acStr = p.ac > 0 ? p.ac.toLocaleString() + ' ac' : '';
     const distStr = p.dist ? '<span style="font-size:11px;color:#b07848;font-weight:500">\u{1F4CD} ' + distLabel(p.dist) + '</span>' : '';
@@ -992,7 +992,7 @@ card.onmouseleave = () => {
           (acStr ? '<div class="acres">' + acStr + '</div>' : '') + matchBadge +
         '</div>' +
       '</div>' +
-      '<div class="addr"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>' + p.a + ', Aurora CO ' + distStr + '</div>' +
+      '<div class="addr"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>' + p.a + ', ' + CITY + ' ' + STATE + ' ' + distStr + '</div>' +
       '<div class="tags">' + tagsHtml + '</div>' +
       '<div class="card-actions">' +
         '<a href="' + mapUrl + '" target="_blank" class="dir-btn" onclick="event.stopPropagation()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg> Get Directions</a>'
