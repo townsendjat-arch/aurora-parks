@@ -597,7 +597,7 @@ function renderMarkers(filteredList) {
 }).bindPopup(
   '<b>' + p.n + '</b>' +
   '<div class="popup-acres">' + (p.ac > 0 ? p.ac.toLocaleString() + ' acres' : 'Open space') + '</div>' +
-  '<div style="font-size:11px;color:#999;margin-top:2px">' + p.a + ', Aurora CO</div>' +
+  '<div style="font-size:11px;color:#999;margin-top:2px">' + p.a + ', ' + CITY + ' ' + STATE + '</div>'
   (isVisited ? '<div class="popup-visited">&#x2713; Visited</div>' : '')
 ).addTo(markersLayer);
 
