@@ -433,6 +433,9 @@
 </footer>
 
 <script>
+  // Get search term from homepage
+const urlParams = new URLSearchParams(window.location.search);
+const searchQuery = urlParams.get('search')?.toLowerCase() || "";
 const COORDS = {
   "Alta Vista Park": [39.690588,-104.791457],
   "Altura Park": [39.742784,-104.813072],
@@ -807,6 +810,10 @@ const FILTERS = [
 ];
 
 const grid = document.getElementById('grid');
+// If homepage passed a search query, apply it
+if (searchQuery && searchEl) {
+  searchEl.value = searchQuery;
+}
 const searchEl = document.getElementById('search');
 const sortEl = document.getElementById('sort');
 const filterBar = document.getElementById('filter-bar');
