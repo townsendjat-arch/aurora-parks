@@ -595,10 +595,10 @@ function renderMarkers(filteredList) {
    const marker = L.circleMarker([c[0], c[1]], {
   radius: isVisited || isMatch ? 8 : 6, fillColor: color, color: 'white', weight: 2, fillOpacity: 0.88
 }).bindPopup(
-  '<b>' + p.n + '</b>' +
-  '<div class="popup-acres">' + (p.ac > 0 ? p.ac.toLocaleString() + ' acres' : 'Open space') + '</div>' +
-  '<div style="font-size:11px;color:#999;margin-top:2px">' + p.a + ', ' + CITY + ' ' + STATE + '</div>'
-  (isVisited ? '<div class="popup-visited">&#x2713; Visited</div>' : '')
+ '<b>' + p.n + '</b>' +
+'<div class="popup-acres">' + (p.ac > 0 ? p.ac.toLocaleString() + ' acres' : 'Open space') + '</div>' +
+'<div style="font-size:11px;color:#999;margin-top:2px">' + p.a + ', ' + CITY + ' ' + STATE + '</div>' +
+(isVisited ? '<div class="popup-visited">&#x2713; Visited</div>' : '')
 ).addTo(markersLayer);
 
 parkMarkers[p.n] = marker;
