@@ -810,10 +810,7 @@ const FILTERS = [
 ];
 
 const grid = document.getElementById('grid');
-// If homepage passed a search query, apply it
-if (searchQuery && searchEl) {
-  searchEl.value = searchQuery;
-}
+
 const searchEl = document.getElementById('search');
 const sortEl = document.getElementById('sort');
 const filterBar = document.getElementById('filter-bar');
@@ -823,6 +820,11 @@ const badge = document.getElementById('shown-badge');
   
 let visibleCount = 12;
   
+   // If homepage passed a search query, apply it
+  if (searchQuery && searchEl) 
+     searchEl.value = searchQuery;
+  render();
+  }
   let active = new Set();
 window._activeSet = active;
 
