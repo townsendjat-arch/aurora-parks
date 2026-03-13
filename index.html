@@ -94,17 +94,9 @@
   justify-content: center;
   text-align: center;
 }
-    /* Wavy bottom edge — same style as the original header */
-    .hero::after {
-      content: '';
-      position: absolute;
-      bottom: -2px;
-      left: -5%;
-      right: -5%;
-      height: 40px;
-      background: var(--mist);
-      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-    }
+   .hero::after {
+  display: none;
+} 
     .hero-inner {
       position: relative;
       z-index: 1;
