@@ -78,21 +78,19 @@
       The hero uses min-height/max-height instead of height:100vh.
       This keeps the content below visible without excessive scrolling.
     */
-    .hero {
-      background-image: url("images/aurora-parks-hero.png");
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      min-height: 320px;
-      max-height: 420px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 40px 20px;
-      position: relative;
-      overflow: hidden;
-    }
+  .hero {
+  background-image: url("aurora-parks-hero.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  min-height: 320px;
+  max-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
     /* Wavy bottom edge — same style as the original header */
     .hero::after {
       content: '';
