@@ -1,1 +1,0 @@
-const AURORA_PARKS = [];
