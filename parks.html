@@ -87,7 +87,7 @@
     .search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); opacity: 0.38; pointer-events: none; }
     #search { width: 100%; padding: 9px 12px 9px 36px; border: 1.5px solid #ddd; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; background: var(--mist); outline: none; transition: border-color 0.18s; }
     #search:focus { border-color: var(--grass); background: var(--white); }
-    #sort { padding: 9px 30px 9px 13px; border: 1.5px solid #ddd; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; background: var(--mist) url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23777' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center; appearance: none; outline: none; cursor: pointer; }
+    #sort { padding: 9px 30px 9px 13px; border: 1.5px solid #ddd; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; background: var(--mist) url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' ke='%23777' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center; appearance: none; outline: none; cursor: pointer; }
     .filter-bar { max-width: 1100px; margin: 0 auto; padding: 0 20px 12px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
    .filter-bar { max-width: 1100px; margin: 0 auto; padding: 0 20px 12px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 
@@ -562,6 +562,15 @@ let mapMode = 'all';
 let map, markersLayer, userMarker;
 let parkMarkers = {};
 let currentFiltered = [];
+let activeFilters = {
+  mapMode: 'all'
+};
+
+const savedFilters = localStorage.getItem("parkFilters");
+if (savedFilters) {
+  activeFilters = JSON.parse(savedFilters);
+  mapMode = activeFilters.mapMode || 'all';
+}
 
 function initMap() {
   map = L.map("map").setView([39.710, -104.800], 11);
@@ -595,10 +604,15 @@ function renderMarkers(filteredList) {
    const marker = L.circleMarker([c[0], c[1]], {
   radius: isVisited || isMatch ? 8 : 6, fillColor: color, color: 'white', weight: 2, fillOpacity: 0.88
 }).bindPopup(
+  (p.photo ? '<img src="' + p.photo + '" alt="' + p.n + '" style="width:100%;height:110px;object-fit:cover;border-radius:10px;margin-bottom:8px;">' : '') +
   '<b>' + p.n + '</b>' +
-  '<div class="popup-acres">' + (p.ac > 0 ? p.ac.toLocaleString() + ' acres' : 'Open space') + '</div>' +
-  '<div style="font-size:11px;color:#999;margin-top:2px">' + p.a + ', ' + CITY + ' ' + STATE + '</div>'
-  (isVisited ? '<div class="popup-visited">&#x2713; Visited</div>' : '')
+  '<div style="font-size:11px;color:#999;margin-top:2px">' + p.a + ', ' + CITY + ' ' + STATE + '</div>' +
+
+'<div style="margin-top:8px;">' +
+ '<a href="./assets/parks/aurora-reservoir.html" style="color:#2f5d50;font-weight:bold;">View Park</a>' +
+'</div>' +
+
+(isVisited ? '<div class="popup-visited">&#x2713; Visited</div>' : '')
 ).addTo(markersLayer);
 
 parkMarkers[p.n] = marker;
@@ -620,10 +634,13 @@ function focusMapOnPark(name) {
 
 function setMapMode(mode) {
   mapMode = mode;
-  document.querySelectorAll('.map-btn[id^="btn-show"]').forEach(b => b.classList.remove('active'));
-  document.getElementById('btn-show-' + mode).classList.add('active');
-  renderMarkers(currentFiltered);
+
+  activeFilters.mapMode = mode;
+  localStorage.setItem("parkFilters", JSON.stringify(activeFilters));
+
+  renderMarkers(P);
 }
+
 
 function locateMe() {
   if (!navigator.geolocation) { alert("Geolocation not supported."); return; }
@@ -912,7 +929,7 @@ let list = P.map((p, origIdx) => {
   const c = COORDS[p.n];
   const dist = (userLat && c) ? haversine(userLat, userLng, c[0], c[1]) : null;
   return { ...p, score, matchSearch, origIdx, dist };
-}).filter(p => p.matchSearch);
+}).filter(p => p.matchSearch && (!af.length || p.score === af.length));
 
   if (af.length) list.sort((a,b) => b.score - a.score);
   else if (s === 'alpha') list.sort((a,b) => a.n.localeCompare(b.n));
@@ -967,7 +984,16 @@ let list = P.map((p, origIdx) => {
 
     const card = document.createElement('div');
     card.className = 'card' + (isNone ? ' dimmed' : '');
-    card.onclick = () => focusMapOnPark(p.n);
+card.onclick = () => {
+
+  // Save current filter state
+sessionStorage.setItem('parksFilters', JSON.stringify({
+  search: document.getElementById('search')?.value || '',
+  sort: document.getElementById('sort')?.value || '',
+  active: [...active]
+}));
+  window.location.href = 'park.html?name=' + encodeURIComponent(p.n);
+};
     card.onmouseenter = () => {
     const m = parkMarkers[p.n];
   if (m) m.setStyle({ radius: 12, weight: 3 });
@@ -995,8 +1021,8 @@ card.onmouseleave = () => {
       '<div class="addr"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>' + p.a + ', ' + CITY + ' ' + STATE + ' ' + distStr + '</div>' +
       '<div class="tags">' + tagsHtml + '</div>' +
       '<div class="card-actions">' +
-        '<a href="' + mapUrl + '" target="_blank" class="dir-btn" onclick="event.stopPropagation()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg> Get Directions</a>'
-      '</div>';
+  '<a href="' + mapUrl + '" target="_blank" class="dir-btn" onclick="event.stopPropagation()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg> Get Directions</a>' +
+'</div>';
     card.appendChild(body);
     grid.appendChild(card);
   });
@@ -1017,19 +1043,41 @@ if (visibleCount < list.length) {
 }
 }
 updatePassport();
+const savedPageState = sessionStorage.getItem('parksFilters');
+if (savedPageState) {
+  const parsed = JSON.parse(savedPageState);
+
+  if (parsed.search !== undefined) searchEl.value = parsed.search;
+  if (parsed.sort !== undefined) sortEl.value = parsed.sort;
+
+  if (Array.isArray(parsed.active)) {
+    active = new Set(parsed.active);
+    window._activeSet = active;
+
+    document.querySelectorAll('.pill[data-k]').forEach(btn => {
+      btn.classList.toggle('on', active.has(btn.dataset.k));
+    });
+  }
+}
 render();
 searchEl.addEventListener('input', render);
 sortEl.addEventListener('change', render);
-
 if (typeof L !== 'undefined') {
-  initMap(); renderMarkers(currentFiltered);
+  initMap();
+  renderMarkers(currentFiltered);
 } else {
   window.addEventListener('load', () => {
-    if (typeof L !== 'undefined') { initMap(); renderMarkers(currentFiltered); }
-    else { document.getElementById('map').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#aaa;font-size:13px;">Map unavailable</div>'; }
+    if (typeof L !== 'undefined') {
+      initMap();
+      renderMarkers(currentFiltered);
+    } else {
+      document.getElementById('map').innerHTML =
+        '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#aaa;font-size:13px;">Map unavailable</div>';
+    }
   });
 }
-  // MOBILE FILTER TOGGLE
+
+// MOBILE FILTER TOGGLE
 const filterToggle = document.getElementById('filter-toggle');
 const filterBarEl = document.getElementById('filter-bar');
 
@@ -1038,7 +1086,6 @@ if (filterToggle && filterBarEl) {
     filterBarEl.classList.toggle('open');
   };
 }
- 
 </script>
 </body>
 </html>
