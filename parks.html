@@ -265,9 +265,6 @@
       <div class="map-controls">
         <button class="map-btn" id="btn-locate" onclick="locateMe()">&#x1F4CD; Find me</button>
         <span id="locate-error" style="display:none;font-size:11px;color:#e8703a;font-weight:500;">&#x26A0;&#xFE0F; Location access denied</span>
-        <button class="map-btn active" id="btn-show-all" onclick="setMapMode('all')">All parks</button>
-        <button class="map-btn" id="btn-show-filtered" onclick="setMapMode('filtered')">Filtered only</button>
-        <button class="map-btn" id="btn-show-visited" onclick="setMapMode('visited')">Visited only</button>
       </div>
     </div>
     <div id="map"></div>
@@ -587,7 +584,7 @@ function renderMarkers(filteredList) {
   markersLayer.clearLayers();
   const hasFilters = window._activeSet && window._activeSet.size > 0;
   const matchNames = hasFilters
-    ? new Set(filteredList.filter(p => p.score === window._activeSet.size).map(p => p.n))
+    ? new Set(filteredList.map(p => p.n))
     : new Set();
 
   P.filter(p => {
@@ -633,7 +630,7 @@ function setMapMode(mode) {
   activeFilters.mapMode = mode;
   localStorage.setItem("parkFilters", JSON.stringify(activeFilters));
 
-  renderMarkers(P);
+  renderMarkers(filteredParks);
 }
 
 
